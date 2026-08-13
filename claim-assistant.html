@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unclaimed Money Claim Assistant</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
+  h1 { font-size: 22px; }
+  p.sub { color: #9fc9b8; font-size: 14px; margin-top: -8px; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+  select { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
+  button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
+  .result { background: #142d25; border-radius: 10px; padding: 20px; margin-top: 20px; }
+  .result h2 { margin-top: 0; font-size: 18px; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; margin-bottom: 12px; }
+  .badge.yes { background: #d9a441; color: #1a1a1a; }
+  .badge.no { background: #1f9d6f; }
+  .row { margin-bottom: 14px; }
+  .label { font-size: 12px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 4px; }
+  a.portal-link { color: #6ee7b7; }
+  #loading, #empty { display: none; color: #9fc9b8; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<h1>Unclaimed Money Claim Assistant</h1>
+<p class="sub">Already found money in your name on MissingMoney.com or your state's site? Pick your state below to see exactly what you'll need to file.</p>
+
+<div class="search-bar">
+  <select id="stateSelect">
+    <option value="">Select your state...</option>
+    <option value="Oregon">Oregon</option>
+    <option value="California">California</option>
+    <option value="Texas">Texas</option>
+    <option value="Washington">Washington</option>
+    <option value="Arizona">Arizona</option>
+    <option value="Florida">Florida</option>
+    <option value="Nevada">Nevada</option>
+    <option value="Ohio">Ohio</option>
+    <option value="Idaho">Idaho</option>
+    <option value="Colorado">Colorado</option>
+  </select>
+  <button onclick="lookupState()">Get Checklist</button>
+</div>
+
+<div id="loading">Looking up requirements...</div>
+<div id="empty">No data available for that state yet.</div>
+<div id="results"></div>
+
+<script>
+async function lookupState() {
+  const state = document.getElementById('stateSelect').value;
+  if (!state) return;
+
+  const resultsDiv = document.getElementById('results');
+  const loading = document.getElementById('loading');
+  const empty = document.getElementById('empty');
+  resultsDiv.innerHTML = '';
+  empty.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const res = await fetch(`/api/claim-requirements?state=${encodeURIComponent(state)}`);
+    const data = await res.json();
+    loading.style.display = 'none';
+
+    if (!data || data.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    const info = data[0];
+    const notarized = info.requires_notarization;
+
+    resultsDiv.innerHTML = `
+      <div class="result">
+        <h2>${info.state} — What You'll Need</h2>
+        <span class="badge ${notarized ? 'yes' : 'no'}">${notarized ? 'Notarization required' : 'No notarization needed'}</span>
+
+        <div class="row">
+          <div class="label">Required Documents</div>
+          <div>${info.required_documents}</div>
+        </div>
+
+        <div class="row">
+          <div class="label">Typical Processing Time</div>
+          <div>${info.typical_processing_time}</div>
+        </div>
+
+        <div class="row">
+          <div class="label">Good to Know</div>
+          <div>${info.special_notes}</div>
+        </div>
+
+        <div class="row">
+          <div class="label">Official State Portal</div>
+          <a class="portal-link" href="${info.portal_url}" target="_blank">${info.portal_url} &rarr;</a>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    loading.style.display = 'none';
+    resultsDiv.innerHTML = '<p>Something went wrong. Try again.</p>';
+    console.error(err);
+  }
+}
+</script>
+
+</body>
+</html>
