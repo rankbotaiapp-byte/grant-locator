@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grant Finder</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
+  h1 { font-size: 22px; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+  input { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
+  button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
+  .result { background: #142d25; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .result h3 { margin: 0 0 6px 0; font-size: 16px; }
+  .meta { font-size: 13px; color: #9fc9b8; margin-bottom: 4px; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #1f9d6f; margin-top: 6px; }
+  a { color: #6ee7b7; }
+  #loading { display: none; color: #9fc9b8; }
+</style>
+</head>
+<body>
+
+<h1>Grant Finder</h1>
+<div class="search-bar">
+  <input id="keyword" type="text" placeholder="e.g. small business, agriculture, veterans" />
+  <button onclick="searchGrants()">Search</button>
+</div>
+<div id="loading">Searching...</div>
+<div id="results"></div>
+
+<script>
+async function searchGrants() {
+  const keyword = document.getElementById('keyword').value.trim();
+  if (!keyword) return;
+
+  const resultsDiv = document.getElementById('results');
+  const loading = document.getElementById('loading');
+  resultsDiv.innerHTML = '';
+  loading.style.display = 'block';
+
+  try {
+    const res = await fetch('/api/grants-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyword })
+    });
+    const data = await res.json();
+    loading.style.display = 'none';
+
+    const hits = data?.data?.oppHits || [];
+    if (hits.length === 0) {
+      resultsDiv.innerHTML = '<p>No grants found for that keyword.</p>';
+      return;
+    }
+
+    resultsDiv.innerHTML = `<p class="meta">${data.data.hitCount} total matches — showing top ${hits.length}</p>`;
+
+    hits.forEach(hit => {
+      const card = document.createElement('div');
+      card.className = 'result';
+      card.innerHTML = `
+        <h3>${hit.title || 'Untitled Opportunity'}</h3>
+        <div class="meta">${hit.agency || 'Unknown Agency'} &middot; Opportunity #${hit.number || 'N/A'}</div>
+        <div class="meta">Opens: ${hit.openDate || 'N/A'} &nbsp;|&nbsp; Closes: ${hit.closeDate || 'Rolling / Not listed'}</div>
+        <span class="status">${hit.oppStatus || 'unknown'}</span>
+        <div style="margin-top:8px;">
+          <a href="https://www.grants.gov/search-results-detail/${hit.id}" target="_blank">View on Grants.gov &rarr;</a>
+        </div>
+      `;
+      resultsDiv.appendChild(card);
+    });
+  } catch (err) {
+    loading.style.display = 'none';
+    resultsDiv.innerHTML = '<p>Something went wrong. Try again.</p>';
+    console.error(err);
+  }
+}
+
+document.getElementById('keyword').addEventListener('keypress', e => {
+  if (e.key === 'Enter') searchGrants();
+});
+</script>
+
+</body>
+</html>
