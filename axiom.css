@@ -1,0 +1,121 @@
+/* Axiom Floating Container */
+.axiom-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.axiom-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px);
+}
+
+/* Speech Bubble */
+.axiom-bubble {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  max-width: 260px;
+  white-space: nowrap;
+}
+
+/* Avatar Styling */
+.axiom-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  background: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.axiom-icon { width: 28px; height: 28px; }
+.axiom-bg { fill: #1e293b; }
+.axiom-mark { fill: #38bdf8; }
+.axiom-dot { fill: #38bdf8; }
+
+/* Micro-Animations */
+.axiom-entrance {
+  animation: axiomSlideIn 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes axiomSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.axiom-idle {
+  animation: axiomBreath 4000ms ease-in-out infinite;
+}
+@keyframes axiomBreath {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+.axiom-acknowledge {
+  animation: axiomBounce 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes axiomBounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+.axiom-attention {
+  animation: axiomSwell 600ms ease-in-out;
+}
+@keyframes axiomSwell {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.axiom-working {
+  animation: axiomWorkPulse 1500ms ease-in-out infinite;
+}
+@keyframes axiomWorkPulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.03); opacity: 1; }
+}
+
+.axiom-success {
+  animation: axiomPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes axiomPop {
+  0% { transform: scale(0.95); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.axiom-alert {
+  animation: axiomNudge 400ms ease-in-out;
+}
+@keyframes axiomNudge {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.axiom-exit {
+  animation: axiomFadeOut 400ms ease-in forwards;
+}
+@keyframes axiomFadeOut {
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axiom-idle, .axiom-working { animation: none; }
+}
