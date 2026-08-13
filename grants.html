@@ -8,8 +8,9 @@
   body { font-family: -apple-system, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
   h1 { font-size: 22px; }
   .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
-  input { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
+  input, textarea, select { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; font-family: inherit; }
   button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
+  button.secondary { background: #2a4a3e; }
   .result { background: #142d25; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
   .result.forecasted { opacity: 0.7; border-left: 3px solid #d9a441; }
   .result.posted { border-left: 3px solid #1f9d6f; }
@@ -22,6 +23,11 @@
   .section-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9fc9b8; margin: 20px 0 10px 0; }
   a { color: #6ee7b7; }
   #loading { display: none; color: #9fc9b8; }
+  .draft-form { display: none; margin-top: 12px; background: #0d1f1a; padding: 12px; border-radius: 8px; }
+  .draft-form label { display: block; font-size: 12px; color: #9fc9b8; margin: 8px 0 4px 0; }
+  .draft-form textarea { width: 100%; box-sizing: border-box; min-height: 60px; }
+  .draft-output { display: none; margin-top: 12px; background: #0d1f1a; padding: 14px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+  .draft-loading { display: none; font-size: 13px; color: #d9a441; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -35,10 +41,15 @@
 <div id="results"></div>
 
 <script>
+let hitCache = {};
+
 function renderCard(hit) {
   const status = (hit.oppStatus || 'unknown').toLowerCase();
   const card = document.createElement('div');
   card.className = 'result ' + status;
+  const uid = 'g' + hit.id;
+  hitCache[uid] = hit;
+
   card.innerHTML = `
     <h3>${hit.title || 'Untitled Opportunity'}</h3>
     <div class="meta">${hit.agency || 'Unknown Agency'} &middot; Opportunity #${hit.number || 'N/A'}</div>
@@ -46,9 +57,77 @@ function renderCard(hit) {
     <span class="status ${status}">${hit.oppStatus || 'unknown'}</span>
     <div style="margin-top:8px;">
       <a href="https://www.grants.gov/search-results-detail/${hit.id}" target="_blank">View on Grants.gov &rarr;</a>
+      &nbsp;&nbsp;
+      <button class="secondary" onclick="toggleDraftForm('${uid}')">Draft my application</button>
+    </div>
+
+    <div class="draft-form" id="form-${uid}">
+      <label>Your organization / business name</label>
+      <input type="text" id="orgName-${uid}" placeholder="e.g. New Era Apps" />
+      <label>Organization type</label>
+      <input type="text" id="orgType-${uid}" placeholder="e.g. small business, nonprofit, individual" />
+      <label>Describe your funding need / project</label>
+      <textarea id="need-${uid}" placeholder="What do you need funding for, and why?"></textarea>
+      <label>Requested amount (optional)</label>
+      <input type="text" id="amount-${uid}" placeholder="e.g. $25,000" />
+      <div style="margin-top:10px;">
+        <button onclick="generateDraft('${uid}')">Generate Draft</button>
+      </div>
+      <div class="draft-loading" id="draftLoading-${uid}">Writing your draft...</div>
+      <div class="draft-output" id="draftOutput-${uid}"></div>
     </div>
   `;
   return card;
+}
+
+function toggleDraftForm(uid) {
+  const form = document.getElementById('form-' + uid);
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+}
+
+async function generateDraft(uid) {
+  const hit = hitCache[uid];
+  const orgName = document.getElementById(`orgName-${uid}`).value.trim();
+  const orgType = document.getElementById(`orgType-${uid}`).value.trim();
+  const need = document.getElementById(`need-${uid}`).value.trim();
+  const amount = document.getElementById(`amount-${uid}`).value.trim();
+
+  if (!orgName || !need) {
+    alert('Please fill in your organization name and funding need at minimum.');
+    return;
+  }
+
+  const loading = document.getElementById(`draftLoading-${uid}`);
+  const output = document.getElementById(`draftOutput-${uid}`);
+  loading.style.display = 'block';
+  output.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/draft-grant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grantTitle: hit.title,
+        agency: hit.agency,
+        orgName, orgType, need, amount
+      })
+    });
+    const data = await res.json();
+    loading.style.display = 'none';
+
+    if (data.draft) {
+      output.textContent = data.draft;
+      output.style.display = 'block';
+    } else {
+      output.textContent = 'Error: ' + (data.error || 'Could not generate draft.');
+      output.style.display = 'block';
+    }
+  } catch (err) {
+    loading.style.display = 'none';
+    output.textContent = 'Something went wrong generating the draft.';
+    output.style.display = 'block';
+    console.error(err);
+  }
 }
 
 async function searchGrants() {
@@ -59,6 +138,7 @@ async function searchGrants() {
   const loading = document.getElementById('loading');
   resultsDiv.innerHTML = '';
   loading.style.display = 'block';
+  hitCache = {};
 
   try {
     const res = await fetch('/api/grants-search', {
