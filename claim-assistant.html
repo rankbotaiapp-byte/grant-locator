@@ -9,6 +9,15 @@
     body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
     h1 { font-size: 22px; }
     p.sub { color: #9fc9b8; font-size: 14px; margin-top: -8px; }
+    
+    /* 3-Step Banner Styles */
+    .steps-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 20px 0; }
+    .step-card { background: #142d25; border: 1px solid #1f4a3d; border-radius: 8px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+    .step-num { background: #1f9d6f; color: #fff; font-weight: bold; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+    .step-card strong { font-size: 14px; color: #38bdf8; display: block; margin-bottom: 2px; }
+    .step-card p { margin: 0; font-size: 12px; color: #9fc9b8; line-height: 1.3; }
+    .step-card a { color: #38bdf8; text-decoration: underline; }
+
     .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
     select { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
     button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
@@ -21,21 +30,17 @@
     .row { margin-bottom: 14px; }
     .label { font-size: 12px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 4px; }
     
-    /* Buttons & Draft Area */
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     a.portal-link-btn { display: inline-block; background: #38bdf8; color: #0f172a; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; }
     a.portal-link-btn:hover { background: #7dd3fc; }
-    
     button.draft-btn { background: #d9a441; color: #1a1a1a; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
     button.draft-btn:hover { background: #ecc06d; }
 
-    /* Statement Generator Box */
     .draft-box { display: none; background: #0a1814; border: 1px solid #27b380; border-radius: 8px; padding: 16px; margin-top: 16px; }
     .draft-box h3 { margin-top: 0; font-size: 16px; color: #38bdf8; }
     .draft-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .draft-inputs input { padding: 8px 12px; border-radius: 6px; border: 1px solid #1f4a3d; background: #142d25; color: #fff; font-size: 14px; }
     textarea.statement-text { width: 100%; height: 140px; background: #142d25; border: 1px solid #1f4a3d; color: #fff; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 10px; }
-    
     button.copy-btn { background: #1f9d6f; color: #fff; padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
     button.copy-btn:hover { background: #27b380; }
 
@@ -45,7 +50,31 @@
 <body>
 
   <h1>Unclaimed Money Claim Assistant</h1>
-  <p class="sub">Already found money in your name on MissingMoney.com or your state's site? Pick your state below to see exactly what you'll need to file.</p>
+  <p class="sub">Find unclaimed funds in your name and prepare your official claim packet in three easy steps.</p>
+
+  <div class="steps-container">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div>
+        <strong>Search Your Name</strong>
+        <p>Search legal names on <a href="https://www.missingmoney.com" target="_blank" rel="noopener">MissingMoney.com</a> to find property IDs.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div>
+        <strong>Get State Checklist</strong>
+        <p>Pick your state below to check rules, ID requirements, and processing times.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div>
+        <strong>Draft & File</strong>
+        <p>Generate a 1-click claim cover letter, copy it, and submit directly on the portal.</p>
+      </div>
+    </div>
+  </div>
 
   <div class="search-bar">
     <select id="stateSelect" onchange="setAxiomState('FIELD_COMPLETE')">
@@ -84,7 +113,6 @@
   </div>
 
   <script>
-    // Axiom Animation State Controller
     const AXIOM_STATES = {
       ENTRANCE: { class: 'axiom-entrance', msg: "I’ll help you prepare everything." },
       IDLE: { class: 'axiom-idle', msg: "Take your time." },
@@ -103,7 +131,7 @@
       const messageEl = document.getElementById('axiom-message');
 
       avatar.className = 'axiom-avatar';
-      void avatar.offsetWidth; // Trigger reflow for keyframe reset
+      void avatar.offsetWidth;
 
       avatar.classList.add(state.class);
       messageEl.textContent = customMsg || state.msg;
@@ -239,7 +267,6 @@
       setAxiomState('COPIED');
     }
 
-    // Auto-settle to calm idle after entrance
     setTimeout(() => { setAxiomState('IDLE'); }, 1500);
   </script>
 </body>
