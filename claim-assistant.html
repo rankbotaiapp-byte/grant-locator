@@ -20,8 +20,25 @@
     .badge.no { background: #1f9d6f; color: #fff; }
     .row { margin-bottom: 14px; }
     .label { font-size: 12px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 4px; }
-    a.portal-link-btn { display: inline-block; margin-top: 8px; background: #38bdf8; color: #0f172a; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+    
+    /* Buttons & Draft Area */
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    a.portal-link-btn { display: inline-block; background: #38bdf8; color: #0f172a; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; }
     a.portal-link-btn:hover { background: #7dd3fc; }
+    
+    button.draft-btn { background: #d9a441; color: #1a1a1a; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
+    button.draft-btn:hover { background: #ecc06d; }
+
+    /* Statement Generator Box */
+    .draft-box { display: none; background: #0a1814; border: 1px solid #27b380; border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .draft-box h3 { margin-top: 0; font-size: 16px; color: #38bdf8; }
+    .draft-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .draft-inputs input { padding: 8px 12px; border-radius: 6px; border: 1px solid #1f4a3d; background: #142d25; color: #fff; font-size: 14px; }
+    textarea.statement-text { width: 100%; height: 140px; background: #142d25; border: 1px solid #1f4a3d; color: #fff; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 10px; }
+    
+    button.copy-btn { background: #1f9d6f; color: #fff; padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
+    button.copy-btn:hover { background: #27b380; }
+
     #loading, #empty { display: none; color: #9fc9b8; margin-top: 16px; }
   </style>
 </head>
@@ -72,8 +89,9 @@
       ENTRANCE: { class: 'axiom-entrance', msg: "I’ll help you prepare everything." },
       IDLE: { class: 'axiom-idle', msg: "Take your time." },
       FIELD_COMPLETE: { class: 'axiom-acknowledge', msg: "Got it! Click Get Checklist." },
-      WORKING: { class: 'axiom-working', msg: "Looking up requirements..." },
+      WORKING: { class: 'axiom-working', msg: "Preparing your claim package…" },
       SUCCESS: { class: 'axiom-success', msg: "Everything is ready." },
+      COPIED: { class: 'axiom-acknowledge', msg: "Copied! Ready to paste into state site." },
       HANDOFF: { class: 'axiom-exit', msg: "You’ve got this." }
     };
 
@@ -104,7 +122,7 @@
         return;
       }
 
-      setAxiomState('WORKING');
+      setAxiomState('WORKING', 'Looking up requirements...');
 
       const resultsDiv = document.getElementById('results');
       const loading = document.getElementById('loading');
@@ -146,8 +164,9 @@
               <div class="label">Good to Know</div>
               <div>${info.special_notes}</div>
             </div>
-            <div class="row">
-              <div class="label">Official State Portal</div>
+
+            <div class="btn-row">
+              <button class="draft-btn" onclick="toggleDraftBox('${info.state}')">📝 Draft Claim Statement</button>
               <a class="portal-link-btn" 
                  href="${info.portal_url}" 
                  target="_blank" 
@@ -156,6 +175,21 @@
                  Go to Official State Portal &rarr;
               </a>
             </div>
+
+            <div id="draftBox" class="draft-box">
+              <h3>Generate Claim Cover Letter</h3>
+              <p style="font-size: 13px; color: #9fc9b8; margin-top:-4px;">Enter your info to generate a clean claim statement to attach to your official state form.</p>
+              <div class="draft-inputs">
+                <input type="text" id="userName" placeholder="Your Full Legal Name">
+                <input type="text" id="claimId" placeholder="Claim / Property ID (Optional)">
+              </div>
+              <button class="draft-btn" style="width: 100%; margin-bottom: 12px;" onclick="generateStatement('${info.state}')">Generate Statement</button>
+              
+              <div id="statementResult" style="display:none;">
+                <textarea id="statementTextArea" class="statement-text" readonly></textarea>
+                <button class="copy-btn" onclick="copyStatement()">📋 Copy Statement</button>
+              </div>
+            </div>
           </div>
         `;
       } catch (err) {
@@ -163,6 +197,46 @@
         setAxiomState('IDLE', 'Something went wrong. Try again.');
         console.error(err);
       }
+    }
+
+    function toggleDraftBox(state) {
+      const box = document.getElementById('draftBox');
+      if (box.style.display === 'block') {
+        box.style.display = 'none';
+        setAxiomState('IDLE');
+      } else {
+        box.style.display = 'block';
+        setAxiomState('FIELD_COMPLETE', 'Enter your name to generate your statement.');
+      }
+    }
+
+    function generateStatement(state) {
+      const name = document.getElementById('userName').value || '[Your Name]';
+      const claimId = document.getElementById('claimId').value || '[Property / Claim ID]';
+
+      setAxiomState('WORKING');
+
+      setTimeout(() => {
+        const text = `RE: Unclaimed Property Claim Submission - State of ${state}\n` +
+          `Claimant Name: ${name}\n` +
+          `Property / Claim ID: ${claimId}\n\n` +
+          `To the Unclaimed Property Administrator,\n\n` +
+          `I am submitting this formal claim statement to verify my ownership of the unclaimed property listed under the ID above in the State of ${state}.\n\n` +
+          `Attached to this submission, please find my supporting identification and documentation as required by ${state} regulations. I certify under penalty of perjury that I am the lawful owner (or authorized heir) entitled to receive these funds.\n\n` +
+          `Thank you for your assistance in processing this claim.\n\n` +
+          `Sincerely,\n${name}`;
+
+        document.getElementById('statementTextArea').value = text;
+        document.getElementById('statementResult').style.display = 'block';
+        setAxiomState('SUCCESS', 'Claim statement ready! Click copy below.');
+      }, 600);
+    }
+
+    function copyStatement() {
+      const text = document.getElementById('statementTextArea');
+      text.select();
+      document.execCommand('copy');
+      setAxiomState('COPIED');
     }
 
     // Auto-settle to calm idle after entrance
