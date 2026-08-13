@@ -1,111 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unclaimed Money Claim Assistant</title>
-<style>
-  body { font-family: -apple-system, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
-  h1 { font-size: 22px; }
-  p.sub { color: #9fc9b8; font-size: 14px; margin-top: -8px; }
-  .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
-  select { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
-  button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
-  .result { background: #142d25; border-radius: 10px; padding: 20px; margin-top: 20px; }
-  .result h2 { margin-top: 0; font-size: 18px; }
-  .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; margin-bottom: 12px; }
-  .badge.yes { background: #d9a441; color: #1a1a1a; }
-  .badge.no { background: #1f9d6f; }
-  .row { margin-bottom: 14px; }
-  .label { font-size: 12px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 4px; }
-  a.portal-link { color: #6ee7b7; }
-  #loading, #empty { display: none; color: #9fc9b8; margin-top: 16px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unclaimed Money Claim Assistant</title>
+  <link rel="stylesheet" href="axiom.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
+    h1 { font-size: 22px; }
+    p.sub { color: #9fc9b8; font-size: 14px; margin-top: -8px; }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+    select { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
+    button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
+    button:hover { background: #27b380; }
+    .result { background: #142d25; border-radius: 10px; padding: 20px; margin-top: 20px; border: 1px solid #1f4a3d; }
+    .result h2 { margin-top: 0; font-size: 18px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; margin-bottom: 12px; font-weight: 600; }
+    .badge.yes { background: #d9a441; color: #1a1a1a; }
+    .badge.no { background: #1f9d6f; color: #fff; }
+    .row { margin-bottom: 14px; }
+    .label { font-size: 12px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 4px; }
+    a.portal-link-btn { display: inline-block; margin-top: 8px; background: #38bdf8; color: #0f172a; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+    a.portal-link-btn:hover { background: #7dd3fc; }
+    #loading, #empty { display: none; color: #9fc9b8; margin-top: 16px; }
+  </style>
 </head>
 <body>
 
-<h1>Unclaimed Money Claim Assistant</h1>
-<p class="sub">Already found money in your name on MissingMoney.com or your state's site? Pick your state below to see exactly what you'll need to file.</p>
+  <h1>Unclaimed Money Claim Assistant</h1>
+  <p class="sub">Already found money in your name on MissingMoney.com or your state's site? Pick your state below to see exactly what you'll need to file.</p>
 
-<div class="search-bar">
-  <select id="stateSelect">
-    <option value="">Select your state...</option>
-    <option value="Oregon">Oregon</option>
-    <option value="California">California</option>
-    <option value="Texas">Texas</option>
-    <option value="Washington">Washington</option>
-    <option value="Arizona">Arizona</option>
-    <option value="Florida">Florida</option>
-    <option value="Nevada">Nevada</option>
-    <option value="Ohio">Ohio</option>
-    <option value="Idaho">Idaho</option>
-    <option value="Colorado">Colorado</option>
-  </select>
-  <button onclick="lookupState()">Get Checklist</button>
-</div>
+  <div class="search-bar">
+    <select id="stateSelect" onchange="setAxiomState('FIELD_COMPLETE')">
+      <option value="">Select your state...</option>
+      <option value="Oregon">Oregon</option>
+      <option value="California">California</option>
+      <option value="Texas">Texas</option>
+      <option value="Washington">Washington</option>
+      <option value="Arizona">Arizona</option>
+      <option value="Florida">Florida</option>
+      <option value="Nevada">Nevada</option>
+      <option value="Ohio">Ohio</option>
+      <option value="Idaho">Idaho</option>
+      <option value="Colorado">Colorado</option>
+    </select>
+    <button onclick="lookupState()">Get Checklist</button>
+  </div>
 
-<div id="loading">Looking up requirements...</div>
-<div id="empty">No data available for that state yet.</div>
-<div id="results"></div>
+  <div id="loading">Looking up requirements...</div>
+  <div id="empty">No data available for that state yet.</div>
+  <div id="results"></div>
 
-<script>
-async function lookupState() {
-  const state = document.getElementById('stateSelect').value;
-  if (!state) return;
+  <div id="axiom-widget" class="axiom-container" aria-live="polite">
+    <div class="axiom-avatar-wrapper">
+      <div id="axiom-avatar" class="axiom-avatar axiom-entrance">
+        <svg class="axiom-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" class="axiom-bg" />
+          <path d="M20 8L30 28H24L20 19L16 28H10L20 8Z" class="axiom-mark" />
+          <circle cx="20" cy="14" r="2.5" class="axiom-dot" />
+        </svg>
+      </div>
+    </div>
+    <div class="axiom-bubble">
+      <span id="axiom-message">I’ll help you prepare everything.</span>
+    </div>
+  </div>
 
-  const resultsDiv = document.getElementById('results');
-  const loading = document.getElementById('loading');
-  const empty = document.getElementById('empty');
-  resultsDiv.innerHTML = '';
-  empty.style.display = 'none';
-  loading.style.display = 'block';
+  <script>
+    // Axiom Animation State Controller
+    const AXIOM_STATES = {
+      ENTRANCE: { class: 'axiom-entrance', msg: "I’ll help you prepare everything." },
+      IDLE: { class: 'axiom-idle', msg: "Take your time." },
+      FIELD_COMPLETE: { class: 'axiom-acknowledge', msg: "Got it! Click Get Checklist." },
+      WORKING: { class: 'axiom-working', msg: "Looking up requirements..." },
+      SUCCESS: { class: 'axiom-success', msg: "Everything is ready." },
+      HANDOFF: { class: 'axiom-exit', msg: "You’ve got this." }
+    };
 
-  try {
-    const res = await fetch(`/api/claim-requirements?state=${encodeURIComponent(state)}`);
-    const data = await res.json();
-    loading.style.display = 'none';
+    function setAxiomState(stateKey, customMsg) {
+      const state = AXIOM_STATES[stateKey];
+      if (!state) return;
 
-    if (!data || data.length === 0) {
-      empty.style.display = 'block';
-      return;
+      const avatar = document.getElementById('axiom-avatar');
+      const messageEl = document.getElementById('axiom-message');
+
+      avatar.className = 'axiom-avatar';
+      void avatar.offsetWidth; // Trigger reflow for keyframe reset
+
+      avatar.classList.add(state.class);
+      messageEl.textContent = customMsg || state.msg;
+
+      if (['axiom-acknowledge', 'axiom-success'].includes(state.class)) {
+        setTimeout(() => {
+          avatar.className = 'axiom-avatar axiom-idle';
+        }, 800);
+      }
     }
 
-    const info = data[0];
-    const notarized = info.requires_notarization;
+    async function lookupState() {
+      const state = document.getElementById('stateSelect').value;
+      if (!state) {
+        setAxiomState('FIELD_COMPLETE', 'Please pick a state first.');
+        return;
+      }
 
-    resultsDiv.innerHTML = `
-      <div class="result">
-        <h2>${info.state} — What You'll Need</h2>
-        <span class="badge ${notarized ? 'yes' : 'no'}">${notarized ? 'Notarization required' : 'No notarization needed'}</span>
+      setAxiomState('WORKING');
 
-        <div class="row">
-          <div class="label">Required Documents</div>
-          <div>${info.required_documents}</div>
-        </div>
+      const resultsDiv = document.getElementById('results');
+      const loading = document.getElementById('loading');
+      const empty = document.getElementById('empty');
 
-        <div class="row">
-          <div class="label">Typical Processing Time</div>
-          <div>${info.typical_processing_time}</div>
-        </div>
+      resultsDiv.innerHTML = '';
+      empty.style.display = 'none';
+      loading.style.display = 'block';
 
-        <div class="row">
-          <div class="label">Good to Know</div>
-          <div>${info.special_notes}</div>
-        </div>
+      try {
+        const res = await fetch(`/api/claim-requirements?state=${encodeURIComponent(state)}`);
+        const data = await res.json();
+        loading.style.display = 'none';
 
-        <div class="row">
-          <div class="label">Official State Portal</div>
-          <a class="portal-link" href="${info.portal_url}" target="_blank">${info.portal_url} &rarr;</a>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    loading.style.display = 'none';
-    resultsDiv.innerHTML = '<p>Something went wrong. Try again.</p>';
-    console.error(err);
-  }
-}
-</script>
+        if (!data || data.length === 0) {
+          empty.style.display = 'block';
+          setAxiomState('IDLE', 'No requirements found for that state yet.');
+          return;
+        }
 
+        const info = data[0];
+        const notarized = info.requires_notarization;
+
+        setAxiomState('SUCCESS', 'Requirements loaded below!');
+
+        resultsDiv.innerHTML = `
+          <div class="result">
+            <h2>${info.state} — What You'll Need</h2>
+            <span class="badge ${notarized ? 'yes' : 'no'}">${notarized ? 'Notarization required' : 'No notarization needed'}</span>
+            <div class="row">
+              <div class="label">Required Documents</div>
+              <div>${info.required_documents}</div>
+            </div>
+            <div class="row">
+              <div class="label">Typical Processing Time</div>
+              <div>${info.typical_processing_time}</div>
+            </div>
+            <div class="row">
+              <div class="label">Good to Know</div>
+              <div>${info.special_notes}</div>
+            </div>
+            <div class="row">
+              <div class="label">Official State Portal</div>
+              <a class="portal-link-btn" 
+                 href="${info.portal_url}" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 onclick="setAxiomState('HANDOFF')">
+                 Go to Official State Portal &rarr;
+              </a>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        loading.style.display = 'none';
+        setAxiomState('IDLE', 'Something went wrong. Try again.');
+        console.error(err);
+      }
+    }
+
+    // Auto-settle to calm idle after entrance
+    setTimeout(() => { setAxiomState('IDLE'); }, 1500);
+  </script>
 </body>
 </html>
