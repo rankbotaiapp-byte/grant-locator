@@ -11,9 +11,15 @@
   input { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
   button { padding: 12px 20px; border-radius: 8px; border: none; background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
   .result { background: #142d25; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .result.forecasted { opacity: 0.7; border-left: 3px solid #d9a441; }
+  .result.posted { border-left: 3px solid #1f9d6f; }
   .result h3 { margin: 0 0 6px 0; font-size: 16px; }
   .meta { font-size: 13px; color: #9fc9b8; margin-bottom: 4px; }
-  .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #1f9d6f; margin-top: 6px; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 6px; }
+  .status.posted { background: #1f9d6f; }
+  .status.forecasted { background: #d9a441; color: #1a1a1a; }
+  .status.closed, .status.archived { background: #555; }
+  .section-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9fc9b8; margin: 20px 0 10px 0; }
   a { color: #6ee7b7; }
   #loading { display: none; color: #9fc9b8; }
 </style>
@@ -29,6 +35,22 @@
 <div id="results"></div>
 
 <script>
+function renderCard(hit) {
+  const status = (hit.oppStatus || 'unknown').toLowerCase();
+  const card = document.createElement('div');
+  card.className = 'result ' + status;
+  card.innerHTML = `
+    <h3>${hit.title || 'Untitled Opportunity'}</h3>
+    <div class="meta">${hit.agency || 'Unknown Agency'} &middot; Opportunity #${hit.number || 'N/A'}</div>
+    <div class="meta">Opens: ${hit.openDate || 'N/A'} &nbsp;|&nbsp; Closes: ${hit.closeDate || 'Rolling / Not listed'}</div>
+    <span class="status ${status}">${hit.oppStatus || 'unknown'}</span>
+    <div style="margin-top:8px;">
+      <a href="https://www.grants.gov/search-results-detail/${hit.id}" target="_blank">View on Grants.gov &rarr;</a>
+    </div>
+  `;
+  return card;
+}
+
 async function searchGrants() {
   const keyword = document.getElementById('keyword').value.trim();
   if (!keyword) return;
@@ -53,22 +75,39 @@ async function searchGrants() {
       return;
     }
 
+    const open = hits.filter(h => (h.oppStatus || '').toLowerCase() === 'posted');
+    const forecasted = hits.filter(h => (h.oppStatus || '').toLowerCase() === 'forecasted');
+    const other = hits.filter(h => !['posted', 'forecasted'].includes((h.oppStatus || '').toLowerCase()));
+
     resultsDiv.innerHTML = `<p class="meta">${data.data.hitCount} total matches — showing top ${hits.length}</p>`;
 
-    hits.forEach(hit => {
-      const card = document.createElement('div');
-      card.className = 'result';
-      card.innerHTML = `
-        <h3>${hit.title || 'Untitled Opportunity'}</h3>
-        <div class="meta">${hit.agency || 'Unknown Agency'} &middot; Opportunity #${hit.number || 'N/A'}</div>
-        <div class="meta">Opens: ${hit.openDate || 'N/A'} &nbsp;|&nbsp; Closes: ${hit.closeDate || 'Rolling / Not listed'}</div>
-        <span class="status">${hit.oppStatus || 'unknown'}</span>
-        <div style="margin-top:8px;">
-          <a href="https://www.grants.gov/search-results-detail/${hit.id}" target="_blank">View on Grants.gov &rarr;</a>
-        </div>
-      `;
-      resultsDiv.appendChild(card);
-    });
+    if (open.length) {
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = `Open now — accepting applications (${open.length})`;
+      resultsDiv.appendChild(label);
+      open.forEach(h => resultsDiv.appendChild(renderCard(h)));
+    }
+
+    if (forecasted.length) {
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = `Coming soon — not yet accepting applications (${forecasted.length})`;
+      resultsDiv.appendChild(label);
+      forecasted.forEach(h => resultsDiv.appendChild(renderCard(h)));
+    }
+
+    if (other.length) {
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = `Other (${other.length})`;
+      resultsDiv.appendChild(label);
+      other.forEach(h => resultsDiv.appendChild(renderCard(h)));
+    }
+
+    if (!open.length) {
+      resultsDiv.insertAdjacentHTML('beforeend', '<p class="meta">No currently-open opportunities matched — try a broader keyword.</p>');
+    }
   } catch (err) {
     loading.style.display = 'none';
     resultsDiv.innerHTML = '<p>Something went wrong. Try again.</p>';
