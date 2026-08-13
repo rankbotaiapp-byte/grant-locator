@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings — Admin</title>
+  <script src="config.js"></script>
+  <style>
+    :root { --accent: #F4A300; --bg: #0A0A0A; --panel: #1a1a1a; --line: rgba(255,255,255,.1); }
+    * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, sans-serif; }
+    body { background: var(--bg); color: #fff; padding: 1rem; min-height: 100vh; }
+    header { text-align: center; padding: 1.5rem 0; }
+    header h1 { font-size: 1.5rem; color: var(--accent); text-shadow: 0 0 12px var(--accent); }
+    header p { opacity: .6; font-size: .85rem; margin-top: .3rem; }
+    .refresh { display: block; margin: 0 auto 1.5rem; background: var(--accent); color: #000; border: none; padding: .7rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 0 16px -4px var(--accent); }
+    .booking { background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: .8rem; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 0 14px -8px var(--accent); }
+    .booking .name { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .booking .row { display: flex; justify-content: space-between; margin-top: .5rem; font-size: .9rem; gap: .5rem; }
+    .booking .label { opacity: .5; flex-shrink: 0; }
+    .booking .msg { text-align: right; }
+    .booking .time { color: #4ade80; font-weight: 600; }
+    .booking a { color: #fff; text-decoration: none; }
+    .booking .source { font-size: .72rem; opacity: .5; text-transform: uppercase; margin-top: .5rem; }
+    .empty { text-align: center; opacity: .5; padding: 3rem 1rem; }
+    .count { text-align: center; opacity: .6; margin-bottom: 1rem; font-size: .85rem; }
+
+    /* Login gate */
+    #gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; flex-direction: column; gap: 1rem; }
+    #gate input { padding: .9rem 1rem; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: #fff; font-size: 1rem; width: 240px; text-align: center; }
+    #gate button { background: var(--accent); color: #000; border: none; padding: .8rem 1.6rem; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    #gate .err { color: #ff6b6b; font-size: .85rem; height: 1rem; }
+    #app { display: none; }
+
+    /* Neon color switcher */
+    .theme-bar { display: flex; justify-content: center; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,.3); box-shadow: 0 0 10px -2px currentColor; transition: transform .15s; }
+    .swatch:hover, .swatch:active { transform: scale(1.15); }
+    .swatch.active { border-color: #fff; }
+    .swatch.custom { display: flex; align-items: center; justify-content: center; background: var(--panel); font-size: .9rem; color: #fff; }
+    #customColorInput { position: absolute; opacity: 0; width: 0; height: 0; }
+  </style>
+</head>
+<body>
+  <div id="gate">
+    <h2>🔒 Owner Login</h2>
+    <input type="password" id="gatePw" placeholder="Enter password" autocomplete="off" />
+    <button onclick="checkPassword()">Enter</button>
+    <div class="err" id="gateErr"></div>
+  </div>
+
+  <div id="app">
+    <header>
+      <h1>📅 Bookings Dashboard</h1>
+      <p>New Era Apps · AXIOM</p>
+    </header>
+
+    <div class="theme-bar" id="themeBar"></div>
+
+    <button class="refresh" onclick="loadBookings()">↻ Refresh</button>
+    <div class="count" id="count"></div>
+    <div id="list"><div class="empty">Loading bookings…</div></div>
+  </div>
+
+  <script>
+    const cfg = window.APP_CONFIG || {};
+
+    if (cfg.admin) {
+      document.querySelector("header h1").textContent = "📅 " + (cfg.admin.title || "Bookings");
+      document.querySelector("header p").textContent = cfg.admin.subtitle || "";
+    }
+
+    // ---- Neon color switcher ----
+    const THEME_COLORS = [
+      "#F4A300", "#FF4FD8", "#4D7BFF", "#4DFFE0",
+      "#B6FF4D", "#FF6B4D", "#7B2FF7", "#FFFFFF"
+    ];
+    const STORAGE_KEY = "admin_accent_" + (cfg.meta?.leadId || "default");
+
+    function applyAccent(color) {
+      document.documentElement.style.setProperty("--accent", color);
+      localStorage.setItem(STORAGE_KEY, color);
+      document.querySelectorAll(".swatch").forEach(s => {
+        s.classList.toggle("active", s.dataset.color === color);
+      });
+    }
+
+    function buildThemeBar() {
+      const bar = document.getElementById("themeBar");
+      const saved = localStorage.getItem(STORAGE_KEY) ||
+        cfg.branding?.accent || cfg.admin?.defaultAccent || "#F4A300";
+
+      THEME_COLORS.forEach(c => {
+        const sw = document.createElement("div");
+        sw.className = "swatch";
+        sw.style.background = c;
+        sw.style.color = c;
+        sw.dataset.color = c;
+        sw.onclick = () => applyAccent(c);
+        bar.appendChild(sw);
+      });
+
+      const custom = document.createElement("label");
+      custom.className = "swatch custom";
+      custom.textContent = "+";
+      custom.style.color = "#fff";
+      const input = document.createElement("input");
+      input.type = "color";
+      input.id = "customColorInput";
+      input.oninput = (e) => applyAccent(e.target.value);
+      custom.appendChild(input);
+      bar.appendChild(custom);
+
+      applyAccent(saved);
+    }
+
+    // ---- Simple password gate ----
+    function checkPassword() {
+      const entered = document.getElementById("gatePw").value;
+      const correct = cfg.admin?.password || "changeme";
+      if (entered === correct) {
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        buildThemeBar();
+        loadBookings();
+      } else {
+        document.getElementById("gateErr").textContent = "Incorrect password.";
+      }
+    }
+    document.getElementById("gatePw").addEventListener("keydown", e => {
+      if (e.key === "Enter") checkPassword();
+    });
+
+    // ---- Load bookings from Supabase ----
+    const SUPABASE_URL = "https://ipnmgmzihndtgufxwkuh.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_iZVME-itegalWU6HyO50MA_5vkhSDSi";
+
+    async function loadBookings() {
+      const list = document.getElementById("list");
+      const count = document.getElementById("count");
+      list.innerHTML = '<div class="empty">Loading…</div>';
+      try {
+        const bizId = cfg.meta?.leadId || "";
+        const url = `${SUPABASE_URL}/rest/v1/orders?business_id=eq.${encodeURIComponent(bizId)}&order=created_at.desc`;
+        const res = await fetch(url, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": "Bearer " + SUPABASE_KEY
+          }
+        });
+        if (!res.ok) throw new Error("Request failed: " + res.status);
+        const rows = await res.json();
+
+        if (!rows.length) {
+          list.innerHTML = '<div class="empty">No bookings yet.</div>';
+          count.textContent = "";
+          return;
+        }
+        count.textContent = rows.length + " booking" + (rows.length === 1 ? "" : "s");
+        list.innerHTML = "";
+        rows.forEach(b => {
+          const d = b.created_at ? new Date(b.created_at).toLocaleString() : "";
+          list.innerHTML += `
+            <div class="booking">
+              <div class="name">${b.customer_name || "Unknown"}</div>
+              <div class="row"><span class="label">Message</span><span class="msg">${b.message || "—"}</span></div>
+              <div class="row"><span class="label">Phone</span><a href="tel:${b.phone}">${b.phone || "—"}</a></div>
+              <div class="row"><span class="label">Booked</span><span class="time">${d}</span></div>
+              <div class="source">${b.source || ""}</div>
+            </div>`;
+        });
+      } catch (e) {
+        list.innerHTML = '<div class="empty">Error loading bookings: ' + e.message + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>
