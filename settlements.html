@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Class Action Settlements</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 20px; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.sub { color: #9fc9b8; font-size: 14px; margin-top: 0; margin-bottom: 20px; }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    select, button { padding: 12px; border-radius: 8px; border: none; font-size: 15px; }
+    select { flex: 1; min-width: 180px; background: #ffffff; color: #1a1a1a; }
+    button { background: #1f9d6f; color: #fff; font-weight: bold; cursor: pointer; }
+    button:hover { background: #27b380; }
+    .card { background: #142d25; border-radius: 10px; padding: 20px; margin-bottom: 16px; border: 1px solid #1f4a3d; }
+    .card h2 { margin-top: 0; font-size: 18px; color: #ffffff; }
+    .badge-row { display: flex; gap: 8px; margin-between: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-payout { background: #d9a441; color: #1a1a1a; }
+    .badge-deadline { background: #2b5245; color: #6ee7b7; }
+    .row { margin-bottom: 12px; }
+    .label { font-size: 11px; text-transform: uppercase; color: #9fc9b8; letter-spacing: 1px; margin-bottom: 2px; }
+    a.claim-btn { display: inline-block; margin-top: 10px; background: #38bdf8; color: #0f172a; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+    a.claim-btn:hover { background: #7dd3fc; }
+    #loading, #empty { display: none; color: #9fc9b8; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+  <h1>Open Class Action Settlements</h1>
+  <p class="sub">Find open settlements you may qualify for. Browse by category and check proof requirements before filing.</p>
+
+  <div class="search-bar">
+    <select id="categorySelect">
+      <option value="">All Categories</option>
+      <option value="Consumer">Consumer</option>
+      <option value="Privacy / Data Breach">Privacy / Data Breach</option>
+      <option value="Technology">Technology</option>
+      <option value="Finance">Finance</option>
+    </select>
+    <button onclick="searchSettlements()">Find Settlements</button>
+  </div>
+
+  <div id="loading">Searching active settlements...</div>
+  <div id="empty">No active settlements found for this filter.</div>
+  <div id="results"></div>
+
+  <script>
+    async function searchSettlements() {
+      const category = document.getElementById('categorySelect').value;
+      const resultsDiv = document.getElementById('results');
+      const loading = document.getElementById('loading');
+      const empty = document.getElementById('empty');
+
+      resultsDiv.innerHTML = '';
+      empty.style.display = 'none';
+      loading.style.display = 'block';
+
+      try {
+        let url = '/api/settlements-search';
+        if (category) url += `?category=${encodeURIComponent(category)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        if (!data || data.length === 0) {
+          empty.style.display = 'block';
+          return;
+        }
+
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <h2>${item.title || item.name}</h2>
+            <div class="badge-row">
+              <span class="badge badge-payout">Est. Payout: ${item.payout_range || 'Varies'}</span>
+              <span class="badge badge-deadline">Deadline: ${item.deadline || 'Open'}</span>
+            </div>
+            <div class="row">
+              <div class="label">Proof Required</div>
+              <div>${item.proof_required ? 'Yes (Receipts/Documentation)' : 'No Proof Required'}</div>
+            </div>
+            <div class="row">
+              <div class="label">Eligibility Summary</div>
+              <div>${item.description || item.eligibility || 'Check official site for qualification details.'}</div>
+            </div>
+            <a class="claim-btn" href="${item.claim_url || item.portal_url}" target="_blank" rel="noopener">Go to Official Claim Site &rarr;</a>
+          `;
+          resultsDiv.appendChild(card);
+        });
+      } catch (err) {
+        loading.style.display = 'none';
+        resultsDiv.innerHTML = '<p>Unable to load settlements. Please try again.</p>';
+        console.error(err);
+      }
+    }
+
+    // Auto-load on page open
+    window.addEventListener('DOMContentLoaded', searchSettlements);
+  </script>
+</body>
+</html>
