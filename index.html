@@ -2,32 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#05060d">
-  <title>Loading…</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Recovery Hub — Find Money Owed To You</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1f1a; color: #fff; margin: 0; padding: 24px 16px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 36px; }
+    h1 { font-size: 28px; margin-bottom: 8px; color: #ffffff; }
+    p.tagline { color: #9fc9b8; font-size: 16px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 24px; }
+    .card { background: #142d25; border: 1px solid #1f4a3d; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s; }
+    .card:hover { transform: translateY(-3px); border-color: #38bdf8; }
+    .card-icon { font-size: 32px; margin-bottom: 12px; }
+    .card h2 { font-size: 20px; margin: 0 0 8px 0; color: #ffffff; }
+    .card p { color: #9fc9b8; font-size: 14px; line-height: 1.5; margin: 0 0 20px 0; }
+    .card a { display: inline-block; background: #1f9d6f; color: #ffffff; text-decoration: none; text-align: center; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; }
+    .card a:hover { background: #27b380; }
+    footer { text-align: center; margin-top: 48px; font-size: 12px; color: #6b8a7d; }
+  </style>
 </head>
 <body>
-  <div class="neon-frame" id="neonFrame"></div>
-  <header id="app-header"></header>
-  <main id="app"></main>
-  <div class="orb-wrap" id="orbWrap" hidden>
-    <button class="orb" id="orb" aria-label="Ask AXIOM"></button>
-    <div class="orb-panel" id="orbPanel" hidden></div>
+
+  <div class="container">
+    <header>
+      <h1>Money Recovery Hub</h1>
+      <p class="tagline">Search government grants, open lawsuit settlements, and state unclaimed property in one place.</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div>
+          <div class="card-icon">🏛️</div>
+          <h2>Unclaimed Property</h2>
+          <p>Check state database requirements, document checklists, and official claim portals for forgotten funds.</p>
+        </div>
+        <a href="claim-assistant.html">Open Claim Assistant &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">⚖️</div>
+          <h2>Class Action Settlements</h2>
+          <p>Browse open consumer and data-breach settlements with cash payouts and deadline details.</p>
+        </div>
+        <a href="settlements.html">Browse Settlements &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">📜</div>
+          <h2>Grant Finder & AI Assistant</h2>
+          <p>Search active federal grants and generate first-draft application narratives using AI.</p>
+        </div>
+        <a href="grants.html">Search Grants &rarr;</a>
+      </div>
+    </div>
+
+    <footer>
+      <p>Search is 100% free. Always verify details on official government or settlement administrator sites.</p>
+    </footer>
   </div>
-  <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script>
-      if (window.APP_CONFIG?.firebase) {
-        firebase.initializeApp(window.APP_CONFIG.firebase);
-        window.firebaseDB = firebase.firestore();
-      }
-    </script>
-  <script src="app.js"></script>
+
 </body>
 </html>
